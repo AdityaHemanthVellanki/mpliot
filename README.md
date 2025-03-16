@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mpilot - AI Model Finder
+
+Mpilot is a modern web application that helps users find the perfect Hugging Face models for their tasks by simply describing their needs in plain text.
+
+## Features
+
+- **Natural Language Search**: Describe what you need in plain language, and let AI find the right models for you
+- **AI-Powered Analysis**: Uses OpenAI or Azure OpenAI to understand queries and extract the relevant task categories
+- **Semantic Matching**: Ranks models by similarity to your query using embeddings
+- **Clean UI**: Modern, responsive design with dark mode support
+- **Performance Stats**: See download counts and other metrics for each model
+- **User Feedback**: Rate the quality of search results to help improve the system
+
+## Tech Stack
+
+- **Frontend**: Next.js, React, TypeScript with inline styles
+- **AI**: OpenAI/Azure OpenAI API for query analysis and embeddings
+- **API Integration**: Hugging Face Hub API for model discovery
+- **Styling**: Dark/light mode, responsive design
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ and npm
+- OpenAI API key or Azure OpenAI access
+- Hugging Face API token
+
+### Installation
+
+1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/mpilot.git
+cd mpilot
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Option 1: Standard OpenAI API
+Create a `.env.local` file in the root directory and add:
+```
+OPENAI_API_KEY=your_openai_api_key_here
+HUGGINGFACE_API_TOKEN=your_huggingface_token_here
+```
 
-## Learn More
+#### Option 2: Azure OpenAI API
+Create a `.env.local` file in the root directory and add:
+```
+AZURE_OPENAI_API_KEY=your_azure_openai_api_key_here
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+AZURE_OPENAI_API_VERSION=2023-05-15
+AZURE_OPENAI_CHAT_DEPLOYMENT=your-gpt-deployment-name
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=your-embedding-deployment-name
+HUGGINGFACE_API_TOKEN=your_huggingface_token_here
+```
 
-To learn more about Next.js, take a look at the following resources:
+Note: For Azure OpenAI, you need to:
+1. Create deployments in the Azure OpenAI Studio
+2. Name your deployments and use those names in the .env file
+3. Typically use "gpt-35-turbo" or "gpt-4" for chat completion deployment and "text-embedding-ada-002" for embedding deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Running the Application
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Start the development server:
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000) in your browser
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Usage
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Enter a description of what you're trying to accomplish (e.g., "I need a model to classify images of flowers")
+2. Click "Search" or press Enter
+3. View the recommended models, ranked by relevance
+4. Click on a model card to view it on Hugging Face
+5. Provide feedback on the results to help improve the system
+
+## Future Enhancements
+
+- Model comparison features
+- Save favorite models
+- Filter by model size, license, or other parameters
+- Advanced search options
+- User accounts and personalized recommendations
+
+## License
+
+MIT
+
+# mpliot
