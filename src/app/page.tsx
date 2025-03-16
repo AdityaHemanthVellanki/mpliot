@@ -1,103 +1,222 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from 'react';
+import { FiSearch, FiAlertCircle, FiArrowRight } from 'react-icons/fi';
+import PromptInput from '@/components/PromptInput';
+import Link from 'next/link';
+import ModelRecommendation from '../components/ModelRecommendation';
+
+// Type for model data
+interface Model {
+  id: string;
+  modelId: string;
+  downloads: number;
+  likesCount?: number;
+  description?: string;
+  tags?: string[];
+  similarity?: number;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [query, setQuery] = useState('');
+  const [models, setModels] = useState<Model[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [taskType, setTaskType] = useState('');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Detect dark mode
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.attributeName === 'class') {
+          const isDarkNow = document.documentElement.classList.contains('dark');
+          setIsDarkMode(isDarkNow);
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, { attributes: true });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  const handlePromptSubmit = async (prompt: string) => {
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+    setRecommendations([]);
+    setTaskType('');
+    
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setResponse(data.text);
+      
+      if (data.recommendedModels && data.recommendedModels.length > 0) {
+        setRecommendations(data.recommendedModels);
+      }
+      
+      if (data.task) {
+        setTaskType(data.task);
+      }
+    } catch (err) {
+      console.error('Error submitting prompt:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="py-8 md:py-16">
+      <div className="max-w-4xl mx-auto text-center mb-12">
+        <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4 text-text-dark dark:text-text-white">
+          <span className="bg-gradient-to-r from-accent-blue to-accent-pink bg-clip-text text-transparent">
+            MPilot
+          </span> AI Model Finder
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Discover the perfect AI models for your projects with our intelligent recommendation system
+        </p>
+      
+        <PromptInput 
+          onSubmit={handlePromptSubmit}
+          placeholder="Describe your task or ask about AI models..."
+          disabled={loading}
+        />
+      </div>
+
+      {loading && (
+        <div className="flex flex-col items-center my-12">
+          <div className="loader"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300 animate-pulse-slow">Finding the best AI models for you...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      {error && (
+        <div className="error-container">
+          <FiAlertCircle className="text-red-500 text-xl flex-shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
+
+      {response && (
+        <div className="card bg-white/80 dark:bg-card-dark backdrop-blur-sm p-6 my-8">
+          <h2 className="font-heading text-xl font-semibold mb-4 text-text-dark dark:text-text-white">
+            Response
+          </h2>
+          <div className="prose dark:prose-invert prose-sm sm:prose-base max-w-none mb-6">
+            {response}
+          </div>
+          
+          {taskType && (
+            <div className="mt-4 mb-2">
+              <span className="text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full">
+                Detected task: {taskType}
+              </span>
+            </div>
+          )}
+          
+          {recommendations.length > 0 ? (
+            <div className="mt-8">
+              <h3 className="font-heading text-lg font-semibold mb-4 text-text-dark dark:text-text-white">
+                Recommended Models
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendations.map((model, index) => (
+                  <ModelRecommendation key={index} model={model} />
+                ))}
+              </div>
+            </div>
+          ) : response ? (
+            <div className="empty-state mt-6">
+              <p className="mb-2 font-medium">No specific models to recommend for this query.</p>
+              <p>Try asking about a specific AI task like "text classification" or "image generation".</p>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      <div className="mt-16 glass rounded-card p-8">
+        <h2 className="font-heading text-2xl font-bold mb-6 text-center text-text-dark dark:text-text-white">
+          Popular AI Model Categories
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="card hover-scale">
+            <div className="h-3 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+            <div className="p-5">
+              <h3 className="font-heading text-xl font-semibold mb-2 text-text-dark dark:text-text-white">
+                Natural Language
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Text generation, classification, summarization and more text processing tasks.
+              </p>
+              <Link 
+                href="/models?type=text-generation" 
+                className="inline-flex items-center text-accent-blue hover:text-accent-pink"
+              >
+                Explore models <FiArrowRight className="ml-2" />
+              </Link>
+            </div>
+          </div>
+          
+          <div className="card hover-scale">
+            <div className="h-3 bg-gradient-to-r from-rose-500 to-pink-500"></div>
+            <div className="p-5">
+              <h3 className="font-heading text-xl font-semibold mb-2 text-text-dark dark:text-text-white">
+                Computer Vision
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Image generation, classification, object detection and segmentation.
+              </p>
+              <Link 
+                href="/models?type=image-classification" 
+                className="inline-flex items-center text-accent-blue hover:text-accent-pink"
+              >
+                Explore models <FiArrowRight className="ml-2" />
+              </Link>
+            </div>
+          </div>
+          
+          <div className="card hover-scale">
+            <div className="h-3 bg-gradient-to-r from-amber-500 to-yellow-500"></div>
+            <div className="p-5">
+              <h3 className="font-heading text-xl font-semibold mb-2 text-text-dark dark:text-text-white">
+                Audio & Speech
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Speech recognition, audio classification, and text-to-speech conversion.
+              </p>
+              <Link 
+                href="/models?type=automatic-speech-recognition" 
+                className="inline-flex items-center text-accent-blue hover:text-accent-pink"
+              >
+                Explore models <FiArrowRight className="ml-2" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
